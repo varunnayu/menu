@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TableTap — Digital Restaurant Ordering</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --amber: #F59E0B;
+    --amber-light: #FCD34D;
+    --amber-dark: #D97706;
+    --cream: #FFFBF0;
+    --charcoal: #1C1917;
+    --stone: #78716C;
+    --warm-white: #FAF9F7;
+    --success: #10B981;
+    --danger: #EF4444;
+    --card-bg: rgba(255,255,255,0.92);
+    --shadow: 0 8px 32px rgba(28,25,23,0.10);
+    --shadow-lg: 0 16px 48px rgba(28,25,23,0.16);
+    --radius: 18px;
+    --radius-sm: 10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--charcoal);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  h1,h2,h3,h4 { font-family: 'Playfair Display', serif; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--amber-light); border-radius: 99px; }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  @keyframes progressBar { from { width: 0; } to { width: 100%; } }
+
+  .fade-in { animation: fadeIn 0.4s ease both; }
+  .slide-up { animation: slideUp 0.5s ease both; }
+
+  /* Layout */
+  .app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; background: var(--cream); }
+  .full-width { max-width: 100%; }
+
+  /* Top Nav */
+  .top-nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255,251,240,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(245,158,11,0.12);
+    padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; color: var(--charcoal); }
+  .nav-logo span { color: var(--amber); }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 24px; border-radius: 50px; font-family: 'DM Sans', sans-serif;
+    font-weight: 600; font-size: 0.95rem; cursor: pointer; border: none;
+    transition: all 0.2s cubic-bezier(.34,1.56,.64,1); outline: none;
+    text-decoration: none;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-primary { background: var(--amber); color: var(--charcoal); box-shadow: 0 4px 14px rgba(245,158,11,0.35); }
+  .btn-primary:hover { background: var(--amber-dark); box-shadow: 0 6px 20px rgba(245,158,11,0.45); transform: translateY(-1px); }
+  .btn-outline { background: transparent; color: var(--charcoal); border: 2px solid var(--amber); }
+  .btn-outline:hover { background: var(--amber); }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-ghost { background: rgba(28,25,23,0.06); color: var(--charcoal); }
+  .btn-ghost:hover { background: rgba(28,25,23,0.10); }
+  .btn-sm { padding: 8px 16px; font-size: 0.85rem; }
+  .btn-lg { padding: 16px 36px; font-size: 1.05rem; }
+  .btn-full { width: 100%; }
+
+  /* Cards */
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    border: 1px solid rgba(245,158,11,0.08);
+    transition: box-shadow 0.2s;
+  }
+  .card:hover { box-shadow: var(--shadow-lg); }
+
+  /* Menu Item Card */
+  .menu-card {
+    display: flex; gap: 14px; padding: 14px;
+    background: var(--card-bg); border-radius: var(--radius);
+    box-shadow: var(--shadow); border: 1px solid rgba(245,158,11,0.08);
+    transition: all 0.2s; animation: fadeIn 0.4s ease both;
+  }
+  .menu-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+  .menu-img {
+    width: 88px; height: 88px; border-radius: 12px; object-fit: cover; flex-shrink: 0;
+    background: linear-gradient(135deg, #fde68a, #fbbf24);
+  }
+  .menu-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .menu-name { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 600; }
+  .menu-desc { font-size: 0.78rem; color: var(--stone); line-height: 1.4; }
+  .menu-price { font-weight: 700; color: var(--amber-dark); font-size: 1rem; margin-top: auto; }
+  .menu-tag {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 0.7rem; font-weight: 600; background: rgba(245,158,11,0.12); color: var(--amber-dark);
+  }
+
+  /* Qty Controls */
+  .qty-ctrl { display: flex; align-items: center; gap: 8px; }
+  .qty-btn {
+    width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 700;
+    background: var(--amber); color: var(--charcoal); transition: all 0.2s;
+  }
+  .qty-btn:hover { background: var(--amber-dark); transform: scale(1.1); }
+  .qty-num { font-weight: 700; font-size: 1rem; min-width: 20px; text-align: center; }
+
+  /* Add to cart btn */
+  .add-btn {
+    padding: 6px 14px; border-radius: 50px; border: none; cursor: pointer;
+    background: var(--amber); color: var(--charcoal); font-weight: 600; font-size: 0.82rem;
+    transition: all 0.2s; display: flex; align-items: center; gap: 5px;
+  }
+  .add-btn:hover { background: var(--amber-dark); transform: scale(1.05); }
+
+  /* Floating Cart */
+  .float-cart {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    z-index: 40; animation: slideUp 0.4s ease both;
+    background: var(--charcoal); color: white;
+    padding: 14px 28px; border-radius: 50px;
+    display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 8px 32px rgba(28,25,23,0.28); cursor: pointer;
+    border: none; font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 600;
+    transition: all 0.2s;
+  }
+  .float-cart:hover { transform: translateX(-50%) translateY(-3px); box-shadow: 0 12px 40px rgba(28,25,23,0.35); }
+  .float-badge {
+    background: var(--amber); color: var(--charcoal);
+    width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 800; animation: pulse 0.6s ease;
+  }
+
+  /* Category Nav */
+  .cat-nav {
+    display: flex; gap: 8px; overflow-x: auto; padding: 12px 20px;
+    scrollbar-width: none; position: sticky; top: 57px; z-index: 30;
+    background: rgba(255,251,240,0.95); backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(245,158,11,0.08);
+  }
+  .cat-nav::-webkit-scrollbar { display: none; }
+  .cat-pill {
+    flex-shrink: 0; padding: 7px 16px; border-radius: 50px; cursor: pointer;
+    font-weight: 600; font-size: 0.85rem; border: 2px solid transparent;
+    transition: all 0.2s; white-space: nowrap;
+    background: rgba(28,25,23,0.06); color: var(--stone);
+  }
+  .cat-pill.active { background: var(--amber); color: var(--charcoal); border-color: var(--amber); }
+  .cat-pill:hover:not(.active) { border-color: var(--amber); color: var(--charcoal); }
+
+  /* Search */
+  .search-wrap { position: relative; }
+  .search-input {
+    width: 100%; padding: 12px 16px 12px 42px; border-radius: 50px;
+    border: 2px solid rgba(245,158,11,0.2); background: white;
+    font-family: 'DM Sans', sans-serif; font-size: 0.95rem; outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--amber); }
+  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--stone); font-size: 1rem; }
+
+  /* Status Steps */
+  .status-steps { display: flex; align-items: center; gap: 0; }
+  .step-item { display: flex; flex-direction: column; align-items: center; flex: 1; }
+  .step-circle {
+    width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 700; border: 3px solid #e5e7eb;
+    background: white; color: #9ca3af; transition: all 0.4s;
+    position: relative; z-index: 2;
+  }
+  .step-circle.done { background: var(--success); border-color: var(--success); color: white; }
+  .step-circle.active { background: var(--amber); border-color: var(--amber); color: var(--charcoal); animation: pulse 1.5s infinite; }
+  .step-label { font-size: 0.72rem; font-weight: 600; margin-top: 6px; color: var(--stone); text-align: center; }
+  .step-label.active { color: var(--amber-dark); }
+  .step-label.done { color: var(--success); }
+  .step-line { flex: 1; height: 3px; background: #e5e7eb; margin: 0 -2px; position: relative; top: -18px; z-index: 1; }
+  .step-line.done { background: var(--success); }
+
+  /* Badge */
+  .badge {
+    display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px;
+    font-size: 0.75rem; font-weight: 700;
+  }
+  .badge-preparing { background: rgba(245,158,11,0.15); color: var(--amber-dark); }
+  .badge-cooking { background: rgba(239,68,68,0.12); color: var(--danger); }
+  .badge-ready { background: rgba(16,185,129,0.12); color: var(--success); }
+  .badge-collected { background: rgba(107,114,128,0.12); color: #6b7280; }
+  .badge-pending { background: rgba(99,102,241,0.12); color: #6366f1; }
+
+  /* Order Card */
+  .order-card {
+    background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow);
+    border: 1px solid rgba(245,158,11,0.10); padding: 18px; animation: fadeIn 0.4s ease both;
+  }
+
+  /* Section Header */
+  .section-header { padding: 20px 20px 10px; }
+  .section-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; }
+  .section-sub { color: var(--stone); font-size: 0.875rem; margin-top: 4px; }
+
+  /* Stat Card */
+  .stat-card {
+    background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 20px; border: 1px solid rgba(245,158,11,0.08);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .stat-icon { font-size: 1.8rem; }
+  .stat-val { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; }
+  .stat-label { font-size: 0.8rem; color: var(--stone); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* Landing */
+  .landing-hero {
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 24px; text-align: center;
+    background: linear-gradient(160deg, #fff8e7 0%, #fff3d0 50%, #fef3c7 100%);
+  }
+  .hero-emoji { font-size: 5rem; animation: bounce 2s infinite; display: block; margin-bottom: 20px; }
+  .hero-title { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 900; line-height: 1.1; margin-bottom: 14px; }
+  .hero-sub { color: var(--stone); font-size: 1.05rem; margin-bottom: 36px; max-width: 360px; }
+  .qr-table-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 340px; margin-bottom: 36px; }
+  .qr-table-btn {
+    aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: white; border-radius: 14px; box-shadow: var(--shadow); cursor: pointer; border: 2px solid transparent;
+    font-family: 'DM Sans', sans-serif; transition: all 0.2s; font-weight: 700; gap: 4px;
+  }
+  .qr-table-btn:hover { border-color: var(--amber); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .qr-table-btn span { font-size: 1.5rem; }
+  .qr-table-btn small { font-size: 0.7rem; color: var(--stone); font-weight: 500; }
+
+  /* Input */
+  .form-input {
+    width: 100%; padding: 13px 16px; border-radius: var(--radius-sm);
+    border: 2px solid rgba(245,158,11,0.2); background: white;
+    font-family: 'DM Sans', sans-serif; font-size: 0.95rem; outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--amber); }
+  .form-label { font-weight: 600; font-size: 0.875rem; margin-bottom: 6px; display: block; color: var(--charcoal); }
+
+  /* Toast */
+  .toast {
+    position: fixed; top: 80px; right: 20px; z-index: 999;
+    background: var(--charcoal); color: white; padding: 12px 20px; border-radius: 12px;
+    font-weight: 600; font-size: 0.9rem; box-shadow: var(--shadow-lg);
+    animation: slideUp 0.3s ease both;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* Divider */
+  .divider { height: 1px; background: rgba(245,158,11,0.12); margin: 4px 0; }
+
+  /* Tab */
+  .tabs { display: flex; background: rgba(28,25,23,0.06); border-radius: 12px; padding: 4px; gap: 4px; }
+  .tab {
+    flex: 1; padding: 9px 12px; border-radius: 9px; border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 0.85rem;
+    transition: all 0.2s; background: transparent; color: var(--stone);
+  }
+  .tab.active { background: white; color: var(--charcoal); box-shadow: 0 2px 8px rgba(28,25,23,0.08); }
+
+  /* Kitchen card */
+  .kitchen-card {
+    background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow);
+    border-left: 4px solid var(--amber); padding: 16px; animation: fadeIn 0.4s ease both;
+  }
+  .kitchen-card.cooking { border-left-color: var(--danger); }
+  .kitchen-card.ready { border-left-color: var(--success); }
+  .kitchen-card.collected { border-left-color: #9ca3af; opacity: 0.7; }
+
+  /* Spinner */
+  .spinner {
+    width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+
+  /* Glassmorphism overlay */
+  .glass {
+    background: rgba(255,255,255,0.7); backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.8);
+  }
+
+  /* Admin sidebar */
+  .admin-layout { display: flex; min-height: 100vh; }
+  .admin-sidebar {
+    width: 220px; flex-shrink: 0; background: var(--charcoal); padding: 24px 16px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .admin-logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 900; color: white; margin-bottom: 20px; padding: 0 8px; }
+  .admin-logo span { color: var(--amber); }
+  .admin-nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
+    color: rgba(255,255,255,0.6); cursor: pointer; font-weight: 500; font-size: 0.9rem;
+    transition: all 0.2s; border: none; background: transparent; width: 100%; text-align: left;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .admin-nav-item:hover, .admin-nav-item.active { background: rgba(245,158,11,0.15); color: var(--amber); }
+  .admin-content { flex: 1; overflow-y: auto; background: #f5f3ef; }
+
+  /* Mobile admin */
+  @media (max-width: 640px) {
+    .admin-sidebar { display: none; }
+    .admin-layout { flex-direction: column; }
+  }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--stone); }
+  .empty-state-icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state-title { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 8px; color: var(--charcoal); }
+
+  /* Progress */
+  .progress-wrap { height: 6px; background: rgba(28,25,23,0.08); border-radius: 99px; overflow: hidden; margin-top: 12px; }
+  .progress-fill { height: 100%; border-radius: 99px; background: var(--amber); transition: width 0.8s cubic-bezier(.34,1.56,.64,1); }
+
+  /* Scrollable page */
+  .page { padding-bottom: 100px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useContext, createContext, useRef, useCallback } = React;
+
+// ─── MOCK DATA ────────────────────────────────────────────────────────────────
+const MENU_DATA = [
+  // Starters
+  { id: 1, name: "Crispy Calamari", category: "Starters", price: 349, desc: "Golden fried squid rings with marinara dip", emoji: "🦑", veg: false, popular: true },
+  { id: 2, name: "Paneer Tikka", category: "Starters", price: 299, desc: "Marinated cottage cheese grilled to perfection", emoji: "🧆", veg: true, popular: true },
+  { id: 3, name: "Bruschetta", category: "Starters", price: 249, desc: "Toasted bread with tomato, basil & olive oil", emoji: "🍞", veg: true, popular: false },
+  { id: 4, name: "Chicken Wings", category: "Starters", price: 379, desc: "8 pcs smoky BBQ wings with ranch dip", emoji: "🍗", veg: false, popular: true },
+  { id: 5, name: "Mushroom Crostini", category: "Starters", price: 279, desc: "Wild mushroom on crisp crostini with truffle oil", emoji: "🍄", veg: true, popular: false },
+  // Main Course
+  { id: 6, name: "Butter Chicken", category: "Main Course", price: 449, desc: "Tender chicken in rich tomato-butter gravy", emoji: "🍛", veg: false, popular: true },
+  { id: 7, name: "Penne Arrabbiata", category: "Main Course", price: 399, desc: "Penne pasta in spicy tomato sauce with basil", emoji: "🍝", veg: true, popular: false },
+  { id: 8, name: "Grilled Salmon", category: "Main Course", price: 649, desc: "Atlantic salmon with lemon butter & seasonal vegs", emoji: "🐟", veg: false, popular: true },
+  { id: 9, name: "Dal Makhani", category: "Main Course", price: 329, desc: "Slow-cooked black lentils with cream & spices", emoji: "🥘", veg: true, popular: true },
+  { id: 10, name: "Margherita Pizza", category: "Main Course", price: 449, desc: "Classic pizza with fresh mozzarella & basil", emoji: "🍕", veg: true, popular: false },
+  { id: 11, name: "Mutton Biryani", category: "Main Course", price: 549, desc: "Fragrant basmati rice with slow-cooked mutton", emoji: "🍚", veg: false, popular: true },
+  // Desserts
+  { id: 12, name: "Gulab Jamun", category: "Desserts", price: 149, desc: "Soft milk dumplings in rose-scented syrup", emoji: "🍮", veg: true, popular: true },
+  { id: 13, name: "Tiramisu", category: "Desserts", price: 299, desc: "Classic Italian espresso & mascarpone dessert", emoji: "🍰", veg: true, popular: false },
+  { id: 14, name: "Chocolate Lava Cake", category: "Desserts", price: 329, desc: "Warm cake with molten chocolate centre & ice cream", emoji: "🫁", veg: true, popular: true },
+  { id: 15, name: "Mango Cheesecake", category: "Desserts", price: 279, desc: "No-bake mango cheesecake with biscuit crust", emoji: "🥭", veg: true, popular: false },
+  // Drinks
+  { id: 16, name: "Mango Lassi", category: "Drinks", price: 149, desc: "Refreshing yogurt drink with Alphonso mangoes", emoji: "🥭", veg: true, popular: true },
+  { id: 17, name: "Cold Coffee", category: "Drinks", price: 179, desc: "Chilled coffee blended with ice cream & milk", emoji: "☕", veg: true, popular: false },
+  { id: 18, name: "Fresh Lime Soda", category: "Drinks", price: 99, desc: "Zesty lime with sparkling water, sweet or salted", emoji: "🍋", veg: true, popular: true },
+  { id: 19, name: "Virgin Mojito", category: "Drinks", price: 199, desc: "Mint, lime & soda — classic and refreshing", emoji: "🫙", veg: true, popular: false },
+  { id: 20, name: "Masala Chai", category: "Drinks", price: 79, desc: "Spiced Indian tea brewed with ginger & cardamom", emoji: "🍵", veg: true, popular: true },
+];
+
+const CATEGORIES = ["All", "Starters", "Main Course", "Desserts", "Drinks"];
+const STATUS_FLOW = ["preparing", "cooking", "ready", "collected"];
+
+function genId() { return Math.random().toString(36).slice(2, 8).toUpperCase(); }
+
+// ─── CONTEXT ──────────────────────────────────────────────────────────────────
+const AppCtx = createContext(null);
+
+function AppProvider({ children }) {
+  const [menuItems, setMenuItems] = useState(MENU_DATA);
+  const [cart, setCart] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [toast, setToast] = useState(null);
+
+  const showToast = useCallback((msg, emoji = "✅") => {
+    setToast({ msg, emoji, key: Date.now() });
+    setTimeout(() => setToast(null), 2500);
+  }, []);
+
+  const addToCart = useCallback((item) => {
+    setCart(prev => {
+      const ex = prev.find(c => c.id === item.id);
+      if (ex) return prev.map(c => c.id === item.id ? { ...c, qty: c.qty + 1 } : c);
+      return [...prev, { ...item, qty: 1 }];
+    });
+    showToast(`${item.name} added!`, item.emoji);
+  }, [showToast]);
+
+  const removeFromCart = useCallback((id) => {
+    setCart(prev => prev.filter(c => c.id !== id));
+  }, []);
+
+  const updateQty = useCallback((id, qty) => {
+    if (qty <= 0) { removeFromCart(id); return; }
+    setCart(prev => prev.map(c => c.id === id ? { ...c, qty } : c));
+  }, [removeFromCart]);
+
+  const clearCart = useCallback(() => setCart([]), []);
+
+  const placeOrder = useCallback((tableId, customerName) => {
+    const order = {
+      id: genId(),
+      tableId,
+      customerName: customerName || `Guest-${genId().slice(0,3)}`,
+      items: [...cart],
+      total: cart.reduce((s, c) => s + c.price * c.qty, 0),
+      status: "preparing",
+      time: new Date(),
+    };
+    setOrders(prev => [order, ...prev]);
+    clearCart();
+    return order;
+  }, [cart, clearCart]);
+
+  const updateOrderStatus = useCallback((orderId, status) => {
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+  }, []);
+
+  const cartTotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
+  const cartCount = cart.reduce((s, c) => s + c.qty, 0);
+
+  return (
+    <AppCtx.Provider value={{
+      menuItems, setMenuItems, cart, cartTotal, cartCount,
+      addToCart, removeFromCart, updateQty, clearCart,
+      orders, placeOrder, updateOrderStatus, showToast
+    }}>
+      {children}
+      {toast && (
+        <div className="toast" key={toast.key}>
+          <span>{toast.emoji}</span> {toast.msg}
+        </div>
+      )}
+    </AppCtx.Provider>
+  );
+}
+
+// ─── ROUTER (simple hash-based) ───────────────────────────────────────────────
+function useRoute() {
+  const [path, setPath] = useState(() => window.location.hash.slice(1) || "/");
+  useEffect(() => {
+    const handler = () => setPath(window.location.hash.slice(1) || "/");
+    window.addEventListener("hashchange", handler);
+    return () => window.removeEventListener("hashchange", handler);
+  }, []);
+  const navigate = useCallback((to) => { window.location.hash = to; }, []);
+  return { path, navigate };
+}
+
+function parseRoute(path) {
+  if (path === "/" || path === "") return { page: "landing", params: {} };
+  if (path.startsWith("/menu/")) return { page: "menu", params: { tableId: path.split("/")[2] } };
+  if (path === "/cart") return { page: "cart", params: {} };
+  if (path === "/payment") return { page: "payment", params: {} };
+  if (path.startsWith("/track")) {
+    const oid = path.split("/")[2];
+    return { page: "track", params: { orderId: oid } };
+  }
+  if (path === "/kitchen") return { page: "kitchen", params: {} };
+  if (path.startsWith("/admin")) {
+    const sub = path.split("/")[2] || "dashboard";
+    return { page: "admin", params: { sub } };
+  }
+  return { page: "landing", params: {} };
+}
+
+// ─── LANDING ──────────────────────────────────────────────────────────────────
+function Landing({ navigate }) {
+  const tables = [1,2,3,4,5,6,7,8,9];
+  return (
+    <div className="landing-hero fade-in">
+      <span className="hero-emoji">🍽️</span>
+      <h1 className="hero-title">Table<span style={{color:"var(--amber)"}}>Tap</span></h1>
+      <p className="hero-sub">Scan. Order. Enjoy. Your digital dining experience starts here.</p>
+      <p style={{fontSize:"0.8rem",color:"var(--stone)",marginBottom:16,fontWeight:600}}>SELECT YOUR TABLE TO START ORDERING</p>
+      <div className="qr-table-grid">
+        {tables.map(t => (
+          <button key={t} className="qr-table-btn" onClick={() => navigate(`/menu/${t}`)}>
+            <span>🪑</span>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:"1.1rem"}}>Table {t}</div>
+            <small>Tap to order</small>
+          </button>
+        ))}
+      </div>
+      <div style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center",marginTop:8}}>
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate("/kitchen")}>🍳 Kitchen View</button>
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate("/admin")}>⚙️ Admin Panel</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── MENU ─────────────────────────────────────────────────────────────────────
+function Menu({ tableId, navigate }) {
+  const { menuItems, cart, cartCount, cartTotal, addToCart, updateQty } = useContext(AppCtx);
+  const [search, setSearch] = useState("");
+  const [activecat, setActivecat] = useState("All");
+  const catRefs = useRef({});
+
+  const filtered = menuItems.filter(item => {
+    const matchCat = activecat === "All" || item.category === activecat;
+    const matchSearch = item.name.toLowerCase().includes(search.toLowerCase()) || item.desc.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  });
+
+  const grouped = CATEGORIES.filter(c => c !== "All").map(cat => ({
+    cat, items: filtered.filter(i => i.category === cat)
+  })).filter(g => g.items.length > 0);
+
+  function scrollTo(cat) {
+    setActivecat(cat);
+    if (cat !== "All" && catRefs.current[cat]) {
+      catRefs.current[cat].scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  function cartQty(id) { const c = cart.find(x => x.id === id); return c ? c.qty : 0; }
+
+  return (
+    <div className="page">
+      {/* Header */}
+      <div className="top-nav">
+        <button onClick={() => navigate("/")} style={{background:"none",border:"none",cursor:"pointer",fontSize:"1.3rem"}}>←</button>
+        <div>
+          <div className="nav-logo">Table<span>Tap</span></div>
+          <div style={{fontSize:"0.75rem",color:"var(--stone)",textAlign:"center"}}>Table {tableId}</div>
+        </div>
+        <div style={{width:32}}/>
+      </div>
+
+      {/* Search */}
+      <div style={{padding:"14px 20px"}}>
+        <div className="search-wrap">
+          <span className="search-icon">🔍</span>
+          <input className="search-input" placeholder="Search dishes…" value={search} onChange={e => { setSearch(e.target.value); setActivecat("All"); }} />
+        </div>
+      </div>
+
+      {/* Category Nav */}
+      <div className="cat-nav">
+        {CATEGORIES.map(cat => (
+          <button key={cat} className={`cat-pill ${activecat === cat ? "active" : ""}`} onClick={() => scrollTo(cat)}>
+            {cat === "All" ? "🍽️ All" : cat === "Starters" ? "🥗 Starters" : cat === "Main Course" ? "🍛 Mains" : cat === "Desserts" ? "🍰 Desserts" : "🥤 Drinks"}
+          </button>
+        ))}
+      </div>
+
+      {/* Items */}
+      <div style={{padding:"0 20px", display:"flex", flexDirection:"column", gap:14, marginTop:16}}>
+        {search ? (
+          <>
+            {filtered.length === 0 && <div className="empty-state"><div className="empty-state-icon">🔍</div><div className="empty-state-title">No results found</div><p>Try a different search term</p></div>}
+            {filtered.map(item => <MenuItemCard key={item.id} item={item} qty={cartQty(item.id)} onAdd={() => addToCart(item)} onUpdate={(q) => updateQty(item.id, q)} />)}
+          </>
+        ) : (
+          grouped.map(({ cat, items }) => (
+            <div key={cat} ref={el => catRefs.current[cat] = el}>
+              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"1.3rem",marginBottom:12,paddingTop:8}}>
+                {cat === "Starters" ? "🥗" : cat === "Main Course" ? "🍛" : cat === "Desserts" ? "🍰" : "🥤"} {cat}
+              </h2>
+              <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                {items.map(item => <MenuItemCard key={item.id} item={item} qty={cartQty(item.id)} onAdd={() => addToCart(item)} onUpdate={(q) => updateQty(item.id, q)} />)}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Floating Cart */}
+      {cartCount > 0 && (
+        <button className="float-cart" onClick={() => navigate("/cart")}>
+          <div className="float-badge">{cartCount}</div>
+          <span>View Cart</span>
+          <span style={{marginLeft:"auto",opacity:.8}}>₹{cartTotal}</span>
+          <span>→</span>
+        </button>
+      )}
+    </div>
+  );
+}
+
+function MenuItemCard({ item, qty, onAdd, onUpdate }) {
+  return (
+    <div className="menu-card">
+      <div className="menu-img" style={{display:"flex",alignItems:"center",justifyContent:"center",fontSize:"3rem"}}>
+        {item.emoji}
+      </div>
+      <div className="menu-info">
+        <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+          <span className="menu-name">{item.name}</span>
+          {item.veg ? <span style={{color:"#16a34a",fontSize:"0.7rem",fontWeight:700}}>🟢 VEG</span> : <span style={{color:"#dc2626",fontSize:"0.7rem",fontWeight:700}}>🔴 NON-VEG</span>}
+          {item.popular && <span className="menu-tag">⭐ Popular</span>}
+        </div>
+        <div className="menu-desc">{item.desc}</div>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:6}}>
+          <span className="menu-price">₹{item.price}</span>
+          {qty === 0 ? (
+            <button className="add-btn" onClick={onAdd}>＋ Add</button>
+          ) : (
+            <div className="qty-ctrl">
+              <button className="qty-btn" onClick={() => onUpdate(qty - 1)}>−</button>
+              <span className="qty-num">{qty}</span>
+              <button className="qty-btn" onClick={() => onUpdate(qty + 1)}>＋</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CART ─────────────────────────────────────────────────────────────────────
+function Cart({ navigate }) {
+  const { cart, cartTotal, removeFromCart, updateQty } = useContext(AppCtx);
+
+  if (cart.length === 0) return (
+    <div className="page">
+      <div className="top-nav">
+        <button onClick={() => navigate(-1)} style={{background:"none",border:"none",cursor:"pointer",fontSize:"1.3rem"}}>←</button>
+        <div className="nav-logo">Your <span>Cart</span></div>
+        <div style={{width:32}}/>
+      </div>
+      <div className="empty-state" style={{marginTop:60}}>
+        <div className="empty-state-icon">🛒</div>
+        <div className="empty-state-title">Your cart is empty</div>
+        <p style={{marginBottom:20}}>Add some delicious items to get started</p>
+        <button className="btn btn-primary" onClick={() => window.history.back()}>Browse Menu</button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="page">
+      <div className="top-nav">
+        <button onClick={() => window.history.back()} style={{background:"none",border:"none",cursor:"pointer",fontSize:"1.3rem"}}>←</button>
+        <div className="nav-logo">Your <span>Cart</span></div>
+        <span style={{fontSize:"0.85rem",color:"var(--stone)"}}>{cart.reduce((s,c)=>s+c.qty,0)} items</span>
+      </div>
+
+      <div style={{padding:"20px",display:"flex",flexDirection:"column",gap:12}}>
+        {cart.map(item => (
+          <div key={item.id} className="card" style={{padding:"14px",display:"flex",gap:12,alignItems:"center"}}>
+            <div style={{fontSize:"2.4rem",width:54,height:54,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(245,158,11,0.08)",borderRadius:12}}>
+              {item.emoji}
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:700,fontFamily:"'Playfair Display',serif"}}>{item.name}</div>
+              <div style={{color:"var(--amber-dark)",fontWeight:700,marginTop:2}}>₹{item.price}</div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
+              <div className="qty-ctrl">
+                <button className="qty-btn" onClick={() => updateQty(item.id, item.qty - 1)}>−</button>
+                <span className="qty-num">{item.qty}</span>
+                <button className="qty-btn" onClick={() => updateQty(item.id, item.qty + 1)}>＋</button>
+              </div>
+              <div style={{fontWeight:700,fontSize:"0.9rem"}}>₹{item.price * item.qty}</div>
+              <button onClick={() => removeFromCart(item.id)} style={{background:"none",border:"none",color:"var(--danger)",cursor:"pointer",fontSize:"0.78rem",fontWeight:600}}>Remove</button>
+            </div>
+          </div>
+        ))}
+
+        {/* Bill Summary */}
+        <div className="card" style={{padding:18}}>
+          <h3 style={{fontFamily:"'Playfair Display',serif",marginBottom:12}}>Bill Summary</h3>
+          {cart.map(i => (
+            <div key={i.id} style={{display:"flex",justifyContent:"space-between",marginBottom:6,fontSize:"0.88rem"}}>
+              <span>{i.name} × {i.qty}</span><span>₹{i.price * i.qty}</span>
+            </div>
+          ))}
+          <div className="divider" style={{margin:"12px 0"}}/>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:"0.85rem",color:"var(--stone)",marginBottom:4}}><span>Subtotal</span><span>₹{cartTotal}</span></div>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:"0.85rem",color:"var(--stone)",marginBottom:4}}><span>GST (5%)</span><span>₹{Math.round(cartTotal*0.05)}</span></div>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:"0.85rem",color:"var(--stone)",marginBottom:8}}><span>Platform fee</span><span>₹10</span></div>
+          <div className="divider"/>
+          <div style={{display:"flex",justifyContent:"space-between",fontWeight:800,fontSize:"1.1rem",marginTop:10}}>
+            <span>Total</span><span style={{color:"var(--amber-dark)"}}>₹{cartTotal + Math.round(cartTotal*0.05) + 10}</span>
+          </div>
+        </div>
+
+        <button className="btn btn-primary btn-full btn-lg" onClick={() => navigate("/payment")}>
+          Proceed to Payment →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── PAYMENT ─────────────────────────────────────────────────────────────────
+function Payment({ navigate }) {
+  const { cart, cartTotal, placeOrder, showToast } = useContext(AppCtx);
+  const [name, setName] = useState("");
+  const [method, setMethod] = useState("upi");
+  const [paying, setPaying] = useState(false);
+  const [done, setDone] = useState(false);
+  const tableId = localStorage.getItem("tableId") || "1";
+
+  const total = cartTotal + Math.round(cartTotal * 0.05) + 10;
+
+  function handlePay() {
+    if (cart.length === 0) { showToast("Cart is empty!", "⚠️"); return; }
+    setPaying(true);
+    setTimeout(() => {
+      setDone(true);
+      setTimeout(() => {
+        const order = placeOrder(tableId, name);
+        navigate(`/track/${order.id}`);
+      }, 1200);
+    }, 2200);
+  }
+
+  if (done) return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:32,textAlign:"center"}}>
+      <div style={{fontSize:"4rem",marginBottom:16,animation:"bounce 1s infinite"}}>✅</div>
+      <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"1.8rem",marginBottom:8}}>Payment Successful!</h2>
+      <p style={{color:"var(--stone)"}}>Placing your order…</p>
+    </div>
+  );
+
+  if (paying) return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:32,textAlign:"center"}}>
+      <div style={{width:60,height:60,borderRadius:"50%",border:"5px solid var(--amber-light)",borderTop:"5px solid var(--amber)",animation:"spin 1s linear infinite",marginBottom:24}}/>
+      <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"1.5rem",marginBottom:8}}>Processing Payment</h2>
+      <p style={{color:"var(--stone)"}}>Please wait…</p>
+    </div>
+  );
+
+  return (
+    <div className="page">
+      <div className="top-nav">
+        <button onClick={() => window.history.back()} style={{background:"none",border:"none",cursor:"pointer",fontSize:"1.3rem"}}>←</button>
+        <div className="nav-logo">Pay<span>ment</span></div>
+        <div style={{width:32}}/>
+      </div>
+      <div style={{padding:20,display:"flex",flexDirection:"column",gap:16}}>
+        {/* Name */}
+        <div className="card" style={{padding:18}}>
+          <label className="form-label">Your Name (optional)</label>
+          <input className="form-input" placeholder="e.g. Rahul" value={name} onChange={e => setName(e.target.value)} />
+        </div>
+
+        {/* Payment Method */}
+        <div className="card" style={{padding:18}}>
+          <div className="form-label" style={{marginBottom:12}}>Payment Method</div>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {[["upi","📱","UPI / GPay / PhonePe"],["card","💳","Credit / Debit Card"],["cash","💵","Pay at Counter"]].map(([val,icon,label]) => (
+              <div key={val} onClick={() => setMethod(val)} style={{
+                display:"flex",alignItems:"center",gap:14,padding:"14px 16px",borderRadius:12,
+                border:`2px solid ${method===val?"var(--amber)":"rgba(245,158,11,0.15)"}`,
+                background:method===val?"rgba(245,158,11,0.06)":"white",cursor:"pointer",transition:"all 0.2s"
+              }}>
+                <span style={{fontSize:"1.5rem"}}>{icon}</span>
+                <span style={{fontWeight:600}}>{label}</span>
+                {method===val && <span style={{marginLeft:"auto",color:"var(--amber)",fontWeight:700}}>✓</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Total */}
+        <div className="card" style={{padding:18}}>
+          <div style={{display:"flex",justifyContent:"space-between",fontWeight:800,fontSize:"1.2rem"}}>
+            <span>Amount to Pay</span>
+            <span style={{color:"var(--amber-dark)"}}>₹{total}</span>
+          </div>
+          <div style={{fontSize:"0.78rem",color:"var(--stone)",marginTop:4}}>Includes GST & platform fee</div>
+        </div>
+
+        <button className="btn btn-primary btn-full btn-lg" onClick={handlePay}>
+          🔒 Pay ₹{total} Now
+        </button>
+        <p style={{textAlign:"center",fontSize:"0.78rem",color:"var(--stone)"}}>This is a demo — no real payment is processed</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── TRACK ────────────────────────────────────────────────────────────────────
+function Track({ orderId, navigate }) {
+  const { orders } = useContext(AppCtx);
+  const order = orders.find(o => o.id === orderId);
+
+  const steps = ["preparing","cooking","ready"];
+  const stepLabels = { preparing: "Preparing", cooking: "Cooking", ready: "Ready" };
+  const stepIcons = { preparing: "👨‍🍳", cooking: "🔥", ready: "✅" };
+  const stepDescs = {
+    preparing: "Your order has been received and is being prepared",
+    cooking: "Your food is being cooked fresh for you!",
+    ready: "Your order is ready! Please collect from the counter.",
+    collected: "Order collected. Enjoy your meal! 😊"
+  };
+
+  if (!order) return (
+    <div style={{padding:40,textAlign:"center"}}>
+      <div style={{fontSize:"3rem",marginBottom:12}}>🔍</div>
+      <h2 style={{fontFamily:"'Playfair Display',serif",marginBottom:8}}>Order Not Found</h2>
+      <button className="btn btn-primary" onClick={() => navigate("/")}>Go Home</button>
+    </div>
+  );
+
+  const currentStep = steps.indexOf(order.status);
+
+  return (
+    <div className="page">
+      <div className="top-nav">
+        <button onClick={() => navigate("/")} style={{background:"none",border:"none",cursor:"pointer",fontSize:"1.3rem"}}>←</button>
+        <div className="nav-logo">Order <span>Status</span></div>
+        <div style={{width:32}}/>
+      </div>
+
+      <div style={{padding:20,display:"flex",flexDirection:"column",gap:16}}>
+        {/* Order ID */}
+        <div className="card" style={{padding:20,textAlign:"center",background:"linear-gradient(135deg,#fff8e7,#fef3c7)"}}>
+          <div style={{fontSize:"0.8rem",color:"var(--stone)",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Order ID</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:"2rem",fontWeight:900,color:"var(--amber-dark)"}}>#{order.id}</div>
+          <div style={{fontSize:"0.85rem",color:"var(--stone)",marginTop:4}}>Table {order.tableId} • {order.customerName}</div>
+        </div>
+
+        {/* Status Steps */}
+        <div className="card" style={{padding:24}}>
+          <div className="status-steps">
+            {steps.map((step, i) => {
+              const isDone = i < currentStep || order.status === "collected";
+              const isActive = i === currentStep && order.status !== "collected";
+              return (
+                <React.Fragment key={step}>
+                  <div className="step-item">
+                    <div className={`step-circle ${isDone ? "done" : ""} ${isActive ? "active" : ""}`}>
+                      {isDone ? "✓" : stepIcons[step]}
+                    </div>
+                    <div className={`step-label ${isDone ? "done" : ""} ${isActive ? "active" : ""}`}>
+                      {stepLabels[step]}
+                    </div>
+                  </div>
+                  {i < steps.length - 1 && <div className={`step-line ${isDone ? "done" : ""}`}/>}
+                </React.Fragment>
+              );
+            })}
+          </div>
+          <div style={{textAlign:"center",marginTop:20,color:"var(--stone)",fontSize:"0.88rem"}}>
+            {stepDescs[order.status]}
+          </div>
+
+          {/* Progress Bar */}
+          <div className="progress-wrap">
+            <div className="progress-fill" style={{
+              width: order.status === "collecting" ? "100%" :
+                     order.status === "ready" ? "100%" :
+                     order.status === "cooking" ? "66%" :
+                     order.status === "preparing" ? "33%" : "100%"
+            }}/>
+          </div>
+        </div>
+
+        {/* Items */}
+        <div className="card" style={{padding:18}}>
+          <h3 style={{fontFamily:"'Playfair Display',serif",marginBottom:12}}>Your Order</h3>
+          {order.items.map(item => (
+            <div key={item.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingBottom:8,marginBottom:8,borderBottom:"1px solid rgba(245,158,11,0.08)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:"1.4rem"}}>{item.emoji}</span>
+                <div>
+                  <div style={{fontWeight:600,fontSize:"0.9rem"}}>{item.name}</div>
+                  <div style={{fontSize:"0.78rem",color:"var(--stone)"}}>× {item.qty}</div>
+                </div>
+              </div>
+              <span style={{fontWeight:700}}>₹{item.price * item.qty}</span>
+            </div>
+          ))}
+          <div style={{display:"flex",justifyContent:"space-between",fontWeight:800,fontSize:"1rem",marginTop:4}}>
+            <span>Total Paid</span><span style={{color:"var(--amber-dark)"}}>₹{order.total + Math.round(order.total*0.05) + 10}</span>
+          </div>
+        </div>
+
+        <button className="btn btn-outline btn-full" onClick={() => navigate(`/menu/${order.tableId}`)}>
+          Order More Items
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── KITCHEN ─────────────────────────────────────────────────────────────────
+function Kitchen({ navigate }) {
+  const { orders, updateOrderStatus } = useContext(AppCtx);
+  const [filter, setFilter] = useState("all");
+
+  const filtered = orders.filter(o => filter === "all" ? o.status !== "collected" : o.status === filter);
+  const statusColors = { preparing: "#f59e0b", cooking: "#ef4444", ready: "#10b981", collected: "#9ca3af" };
+  const nextStatus = { preparing: "cooking", cooking: "ready", ready: "collected" };
+  const nextLabel = { preparing: "Start Cooking 🔥", cooking: "Mark Ready ✅", ready: "Mark Collected 🤝" };
+
+  return (
+    <div style={{minHeight:"100vh",background:"#1c1917",fontFamily:"'DM Sans',sans-serif"}}>
+      {/* Header */}
+      <div style={{background:"#292524",padding:"18px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
+        <div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:"1.5rem",fontWeight:900,color:"white"}}>Kitchen <span style={{color:"var(--amber)"}}>Dashboard</span></div>
+          <div style={{fontSize:"0.78rem",color:"rgba(255,255,255,0.4)",marginTop:2}}>{orders.filter(o=>o.status!=="collected").length} active orders</div>
+        </div>
+        <button className="btn btn-ghost btn-sm" style={{color:"rgba(255,255,255,0.6)"}} onClick={() => navigate("/")}>← Home</button>
+      </div>
+
+      {/* Stats Bar */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:1,background:"rgba(255,255,255,0.05)"}}>
+        {[["preparing","⏳","Preparing"],["cooking","🔥","Cooking"],["ready","✅","Ready"],["collected","🤝","Collected"]].map(([s,icon,label]) => (
+          <div key={s} style={{padding:"14px 16px",textAlign:"center",background:"#292524",borderBottom:"3px solid "+(s===filter?"var(--amber)":"transparent"),cursor:"pointer"}} onClick={()=>setFilter(s==="all"?"all":filter===s?"all":s)}>
+            <div style={{fontSize:"1.4rem"}}>{icon}</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:"1.3rem",color:"white",fontWeight:700}}>{orders.filter(o=>o.status===s).length}</div>
+            <div style={{fontSize:"0.7rem",color:"rgba(255,255,255,0.4)",fontWeight:600}}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filter */}
+      <div style={{padding:"16px 24px",display:"flex",gap:8,overflowX:"auto"}}>
+        {[["all","All Active"],["preparing","Preparing"],["cooking","Cooking"],["ready","Ready"]].map(([v,l]) => (
+          <button key={v} onClick={()=>setFilter(v)} style={{
+            flexShrink:0,padding:"7px 16px",borderRadius:50,border:"none",cursor:"pointer",fontWeight:600,fontSize:"0.82rem",fontFamily:"'DM Sans',sans-serif",
+            background:filter===v?"var(--amber)":"rgba(255,255,255,0.08)",color:filter===v?"var(--charcoal)":"rgba(255,255,255,0.6)"
+          }}>{l}</button>
+        ))}
+      </div>
+
+      {/* Orders */}
+      <div style={{padding:"0 24px 40px",display:"flex",flexDirection:"column",gap:14}}>
+        {filtered.length === 0 && (
+          <div style={{textAlign:"center",padding:60,color:"rgba(255,255,255,0.3)"}}>
+            <div style={{fontSize:"3rem",marginBottom:12}}>🍽️</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:"1.3rem",color:"rgba(255,255,255,0.5)"}}>No orders here</div>
+          </div>
+        )}
+        {filtered.map(order => (
+          <div key={order.id} style={{
+            background:"#292524",borderRadius:16,padding:18,
+            borderLeft:`4px solid ${statusColors[order.status]}`,animation:"fadeIn 0.4s ease both"
+          }}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <div>
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                  <span style={{fontFamily:"'Playfair Display',serif",color:"white",fontSize:"1.1rem",fontWeight:700}}>#{order.id}</span>
+                  <span className={`badge badge-${order.status}`}>{order.status.charAt(0).toUpperCase()+order.status.slice(1)}</span>
+                </div>
+                <div style={{fontSize:"0.8rem",color:"rgba(255,255,255,0.4)",marginTop:3}}>Table {order.tableId} • {order.customerName}</div>
+              </div>
+              <div style={{textAlign:"right",fontSize:"0.78rem",color:"rgba(255,255,255,0.35)"}}>
+                {new Date(order.time).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}
+              </div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:14}}>
+              {order.items.map(item => (
+                <div key={item.id} style={{display:"flex",gap:8,alignItems:"center",padding:"6px 10px",background:"rgba(255,255,255,0.04)",borderRadius:8}}>
+                  <span style={{fontSize:"1.2rem"}}>{item.emoji}</span>
+                  <span style={{color:"rgba(255,255,255,0.8)",fontSize:"0.88rem",fontWeight:500}}>{item.name}</span>
+                  <span style={{marginLeft:"auto",color:"rgba(255,255,255,0.4)",fontSize:"0.82rem"}}>×{item.qty}</span>
+                </div>
+              ))}
+            </div>
+            {order.status !== "collected" && (
+              <button
+                onClick={() => updateOrderStatus(order.id, nextStatus[order.status])}
+                style={{
+                  width:"100%",padding:"11px",borderRadius:12,border:"none",cursor:"pointer",
+                  fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:"0.9rem",
+                  background:statusColors[nextStatus[order.status]]||"var(--success)",
+                  color: nextStatus[order.status]==="cooking"?"white":"var(--charcoal)",
+                  transition:"all 0.2s"
+                }}
+              >
+                {nextLabel[order.status]}
+              </button>
+            )}
+            {order.status === "collected" && (
+              <div style={{textAlign:"center",padding:10,color:"rgba(255,255,255,0.3)",fontSize:"0.85rem"}}>✓ Order Collected</div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN ────────────────────────────────────────────────────────────────────
+function Admin({ sub, navigate }) {
+  const { menuItems, setMenuItems, orders } = useContext(AppCtx);
+  const [activeTab, setActiveTab] = useState(sub || "dashboard");
+
+  const navItems = [
+    { key: "dashboard", icon: "📊", label: "Dashboard" },
+    { key: "menu", icon: "🍽️", label: "Menu Mgmt" },
+    { key: "orders", icon: "📋", label: "Orders" },
+  ];
+
+  function renderContent() {
+    if (activeTab === "dashboard") return <AdminDashboard orders={orders} menuItems={menuItems} />;
+    if (activeTab === "menu") return <AdminMenu menuItems={menuItems} setMenuItems={setMenuItems} />;
+    if (activeTab === "orders") return <AdminOrders orders={orders} />;
+  }
+
+  return (
+    <div className="admin-layout full-width">
+      <div className="admin-sidebar">
+        <div className="admin-logo">Table<span>Tap</span></div>
+        {navItems.map(n => (
+          <button key={n.key} className={`admin-nav-item ${activeTab===n.key?"active":""}`} onClick={() => setActiveTab(n.key)}>
+            {n.icon} {n.label}
+          </button>
+        ))}
+        <div style={{marginTop:"auto"}}>
+          <button className="admin-nav-item" onClick={() => navigate("/")}>🏠 Back to Home</button>
+          <button className="admin-nav-item" onClick={() => navigate("/kitchen")}>🍳 Kitchen View</button>
+        </div>
+      </div>
+      <div className="admin-content">
+        {/* Mobile Nav */}
+        <div style={{display:"flex",gap:0,background:"white",borderBottom:"1px solid rgba(0,0,0,0.08)",overflowX:"auto"}} className="md:hidden">
+          {navItems.map(n => (
+            <button key={n.key} onClick={() => setActiveTab(n.key)} style={{
+              flex:1,padding:"14px 8px",border:"none",background:"transparent",cursor:"pointer",
+              fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:"0.8rem",
+              borderBottom:activeTab===n.key?"3px solid var(--amber)":"3px solid transparent",
+              color:activeTab===n.key?"var(--amber-dark)":"var(--stone)"
+            }}>{n.icon}<br/>{n.label}</button>
+          ))}
+        </div>
+        {renderContent()}
+      </div>
+    </div>
+  );
+}
+
+function AdminDashboard({ orders, menuItems }) {
+  const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
+  const itemCounts = {};
+  orders.forEach(o => o.items.forEach(i => { itemCounts[i.name] = (itemCounts[i.name] || 0) + i.qty; }));
+  const topItem = Object.entries(itemCounts).sort((a,b)=>b[1]-a[1])[0];
+
+  return (
+    <div style={{padding:28}}>
+      <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"1.8rem",marginBottom:6}}>Dashboard</h2>
+      <p style={{color:"var(--stone)",marginBottom:24}}>Overview of your restaurant</p>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:16,marginBottom:28}}>
+        <div className="stat-card"><div className="stat-icon">📦</div><div className="stat-val">{orders.length}</div><div className="stat-label">Total Orders</div></div>
+        <div className="stat-card"><div className="stat-icon">💰</div><div className="stat-val">₹{totalRevenue}</div><div className="stat-label">Total Revenue</div></div>
+        <div className="stat-card"><div className="stat-icon">⭐</div><div className="stat-val" style={{fontSize:"1.1rem"}}>{topItem ? topItem[0] : "—"}</div><div className="stat-label">Top Item ({topItem?topItem[1]:0} orders)</div></div>
+        <div className="stat-card"><div className="stat-icon">🍽️</div><div className="stat-val">{menuItems.length}</div><div className="stat-label">Menu Items</div></div>
+      </div>
+
+      <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"1.2rem",marginBottom:14}}>Recent Orders</h3>
+      {orders.length === 0 && <div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-title">No orders yet</div></div>}
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        {orders.slice(0,5).map(o => (
+          <div key={o.id} className="card" style={{padding:"14px 18px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <div style={{fontWeight:700}}>#{o.id} — Table {o.tableId}</div>
+              <div style={{fontSize:"0.8rem",color:"var(--stone)"}}>{o.customerName} • {o.items.length} items</div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <span className={`badge badge-${o.status}`}>{o.status}</span>
+              <div style={{fontSize:"0.85rem",fontWeight:700,marginTop:4}}>₹{o.total}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AdminMenu({ menuItems, setMenuItems }) {
+  const [showForm, setShowForm] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [form, setForm] = useState({ name:"", category:"Starters", price:"", desc:"", emoji:"🍽️", veg:true, popular:false });
+  const [search, setSearch] = useState("");
+
+  function openAdd() { setForm({ name:"", category:"Starters", price:"", desc:"", emoji:"🍽️", veg:true, popular:false }); setEditItem(null); setShowForm(true); }
+  function openEdit(item) { setForm({ ...item, price: String(item.price) }); setEditItem(item.id); setShowForm(true); }
+  function handleDelete(id) { if (window.confirm("Delete this item?")) setMenuItems(prev => prev.filter(i => i.id !== id)); }
+
+  function handleSave() {
+    if (!form.name || !form.price) return;
+    if (editItem) {
+      setMenuItems(prev => prev.map(i => i.id === editItem ? { ...i, ...form, price: Number(form.price) } : i));
+    } else {
+      setMenuItems(prev => [...prev, { ...form, id: Date.now(), price: Number(form.price) }]);
+    }
+    setShowForm(false);
+  }
+
+  const filtered = menuItems.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div style={{padding:28}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <div>
+          <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"1.8rem"}}>Menu Management</h2>
+          <p style={{color:"var(--stone)"}}>{menuItems.length} items</p>
+        </div>
+        <button className="btn btn-primary btn-sm" onClick={openAdd}>＋ Add Item</button>
+      </div>
+
+      {/* Search */}
+      <div className="search-wrap" style={{marginBottom:16}}>
+        <span className="search-icon">🔍</span>
+        <input className="search-input" placeholder="Search menu items…" value={search} onChange={e=>setSearch(e.target.value)} />
+      </div>
+
+      {/* Form Modal */}
+      {showForm && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div className="card glass" style={{width:"100%",maxWidth:480,padding:24,maxHeight:"90vh",overflowY:"auto"}}>
+            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"1.3rem",marginBottom:20}}>{editItem?"Edit Item":"Add New Item"}</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:14}}>
+              <div><label className="form-label">Item Name *</label><input className="form-input" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} /></div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                <div><label className="form-label">Category</label>
+                  <select className="form-input" value={form.category} onChange={e=>setForm(p=>({...p,category:e.target.value}))}>
+                    {["Starters","Main Course","Desserts","Drinks"].map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div><label className="form-label">Price (₹) *</label><input className="form-input" type="number" value={form.price} onChange={e=>setForm(p=>({...p,price:e.target.value}))} /></div>
+              </div>
+              <div><label className="form-label">Description</label><textarea className="form-input" rows={2} value={form.desc} onChange={e=>setForm(p=>({...p,desc:e.target.value}))} /></div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+                <div><label className="form-label">Emoji</label><input className="form-input" value={form.emoji} onChange={e=>setForm(p=>({...p,emoji:e.target.value}))} /></div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  <label className="form-label">Vegetarian</label>
+                  <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
+                    <input type="checkbox" checked={form.veg} onChange={e=>setForm(p=>({...p,veg:e.target.checked}))} />
+                    <span style={{fontSize:"0.85rem"}}>Yes</span>
+                  </label>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  <label className="form-label">Popular</label>
+                  <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
+                    <input type="checkbox" checked={form.popular} onChange={e=>setForm(p=>({...p,popular:e.target.checked}))} />
+                    <span style={{fontSize:"0.85rem"}}>Yes</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:10,marginTop:20}}>
+              <button className="btn btn-primary" style={{flex:1}} onClick={handleSave}>{editItem?"Save Changes":"Add Item"}</button>
+              <button className="btn btn-ghost" onClick={() => setShowForm(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Items */}
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        {CATEGORIES.filter(c=>c!=="All").map(cat => {
+          const items = filtered.filter(i=>i.category===cat);
+          if (items.length === 0) return null;
+          return (
+            <div key={cat}>
+              <div style={{fontWeight:700,fontSize:"0.8rem",textTransform:"uppercase",letterSpacing:"0.08em",color:"var(--stone)",marginBottom:8,marginTop:12}}>{cat}</div>
+              {items.map(item => (
+                <div key={item.id} className="card" style={{padding:"12px 16px",display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
+                  <span style={{fontSize:"1.8rem"}}>{item.emoji}</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700,fontSize:"0.95rem"}}>{item.name} {item.veg?"🟢":"🔴"}</div>
+                    <div style={{fontSize:"0.78rem",color:"var(--stone)"}}>{item.desc?.slice(0,50)}{item.desc?.length>50?"…":""}</div>
+                  </div>
+                  <div style={{textAlign:"right",flexShrink:0}}>
+                    <div style={{fontWeight:800,color:"var(--amber-dark)"}}>₹{item.price}</div>
+                    <div style={{display:"flex",gap:6,marginTop:6}}>
+                      <button className="btn btn-ghost btn-sm" style={{padding:"4px 10px",fontSize:"0.75rem"}} onClick={()=>openEdit(item)}>Edit</button>
+                      <button className="btn btn-sm" style={{padding:"4px 10px",fontSize:"0.75rem",background:"var(--danger)",color:"white",borderRadius:50}} onClick={()=>handleDelete(item.id)}>Del</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AdminOrders({ orders }) {
+  const [filter, setFilter] = useState("all");
+  const filtered = filter === "all" ? orders : orders.filter(o => o.status === filter);
+
+  return (
+    <div style={{padding:28}}>
+      <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"1.8rem",marginBottom:6}}>All Orders</h2>
+      <p style={{color:"var(--stone)",marginBottom:20}}>{orders.length} total orders</p>
+
+      <div className="tabs" style={{marginBottom:20,maxWidth:500}}>
+        {[["all","All"],["preparing","Preparing"],["cooking","Cooking"],["ready","Ready"],["collected","Collected"]].map(([v,l]) => (
+          <button key={v} className={`tab ${filter===v?"active":""}`} onClick={()=>setFilter(v)}>{l}</button>
+        ))}
+      </div>
+
+      {filtered.length === 0 && <div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-title">No orders</div></div>}
+      <div style={{display:"flex",flexDirection:"column",gap:12}}>
+        {filtered.map(o => (
+          <div key={o.id} className="order-card">
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+              <div>
+                <div style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"1.1rem"}}>Order #{o.id}</div>
+                <div style={{fontSize:"0.8rem",color:"var(--stone)",marginTop:2}}>Table {o.tableId} • {o.customerName} • {new Date(o.time).toLocaleString()}</div>
+              </div>
+              <span className={`badge badge-${o.status}`}>{o.status}</span>
+            </div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
+              {o.items.map(i => (
+                <span key={i.id} style={{background:"rgba(245,158,11,0.08)",padding:"3px 10px",borderRadius:20,fontSize:"0.78rem",fontWeight:600}}>
+                  {i.emoji} {i.name} ×{i.qty}
+                </span>
+              ))}
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span style={{fontSize:"0.85rem",color:"var(--stone)"}}>{o.items.reduce((s,i)=>s+i.qty,0)} items</span>
+              <span style={{fontWeight:800,color:"var(--amber-dark)",fontSize:"1rem"}}>₹{o.total + Math.round(o.total*0.05) + 10}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+function App() {
+  const { path, navigate } = useRoute();
+  const { page, params } = parseRoute(path);
+
+  // Store tableId for payment
+  useEffect(() => {
+    if (page === "menu" && params.tableId) {
+      localStorage.setItem("tableId", params.tableId);
+    }
+  }, [page, params.tableId]);
+
+  function navBack() { navigate("/"); }
+
+  const isAdmin = page === "admin";
+  const isKitchen = page === "kitchen";
+
+  return (
+    <AppProvider>
+      <div className={`app-container ${isAdmin || isKitchen ? "full-width" : ""}`}>
+        {page === "landing" && <Landing navigate={navigate} />}
+        {page === "menu" && <Menu tableId={params.tableId} navigate={navigate} />}
+        {page === "cart" && <Cart navigate={navigate} />}
+        {page === "payment" && <Payment navigate={navigate} />}
+        {page === "track" && <Track orderId={params.orderId} navigate={navigate} />}
+        {page === "kitchen" && <Kitchen navigate={navigate} />}
+        {page === "admin" && <Admin sub={params.sub} navigate={navigate} />}
+      </div>
+    </AppProvider>
+  );
+}
+
+ReactDOM.render(<App />, document.getElementById("root"));
+</script>
+</body>
+</html>
